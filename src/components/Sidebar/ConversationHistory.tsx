@@ -108,7 +108,8 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
               <MessageSquare
                 className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-emerald-400' : 'text-slate-500'}`}
               />
-              <span className="truncate">{conv.title}</span>
+              {/* Issue #6: title tooltip exposes full text when truncated */}
+              <span className="truncate" title={conv.title}>{conv.title}</span>
             </div>
 
             <div className="relative shrink-0 flex items-center">

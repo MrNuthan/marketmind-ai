@@ -4,7 +4,7 @@ import { ChatMessage } from './ChatMessage';
 import { TypingIndicator } from './TypingIndicator';
 import { WelcomeScreen } from './WelcomeScreen';
 import { ChatInput } from './ChatInput';
-import { Sparkles, MessageSquarePlus, RotateCcw, AlertCircle } from 'lucide-react';
+import { Sparkles, RotateCcw, AlertCircle } from 'lucide-react';
 
 interface ChatWindowProps {
   messages: ChatMessageItem[];
@@ -61,15 +61,19 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         id="marketmind-chat-header"
         className="h-14 border-b border-slate-800/80 bg-[#0A0E17]/80 backdrop-blur-xl px-4 sm:px-6 flex items-center justify-between z-10 shrink-0"
       >
+        {/* Issue #9: visually-hidden h1 satisfies the single-h1 SEO requirement */}
+        <h1 className="sr-only">MarketMind AI – Stock Market Intelligence</h1>
         <div className="flex items-center gap-3 min-w-0">
           <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shrink-0">
             <Sparkles className="w-4 h-4" />
           </div>
           <div className="min-w-0">
+            {/* Issue #2: make the conversation title h2 visually distinct at 14px, body at 12px */}
             <h2 className="text-sm font-semibold text-slate-100 truncate">
               {conversationTitle || 'MarketMind AI Assistant'}
             </h2>
-            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-mono">
+            {/* Issue #7: bump from 11px → 12px (text-xs) */}
+            <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
               <span className="truncate max-w-[150px] sm:max-w-[220px]" title={sessionId}>
                 Session: {sessionId}
               </span>
@@ -77,19 +81,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {hasMessages && (
-            <button
-              id="header-new-chat-button"
-              onClick={onNewChat}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-xs font-medium text-slate-300 hover:text-white border border-slate-800 transition-colors"
-              title="Start a new chat"
-            >
-              <MessageSquarePlus className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">New Chat</span>
-            </button>
-          )}
-        </div>
+        {/* Issue #10: header duplicate "New Chat" removed; primary button is in the sidebar. */}
+        <div className="flex items-center gap-2" />
       </header>
 
       {/* Main Content Area: Welcome or Conversation */}

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { Send, Sparkles, Mail, CornerDownLeft } from 'lucide-react';
+import { Send, Sparkles, Mail, CornerDownLeft, TrendingUp, BarChart2 } from 'lucide-react';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -52,9 +52,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
+  const chipClass = "text-[11px] px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 flex items-center gap-1.5 shrink-0 transition-colors";
+
   return (
     <div id="marketmind-chat-input-container" className="w-full max-w-4xl mx-auto px-4 pb-4 pt-2">
-      {/* Quick query shortcut chips */}
+      {/* Issue #1 & #12: unified chip class; every chip now has an icon for consistency */}
       <div className="flex items-center gap-2 mb-2 overflow-x-auto no-scrollbar py-0.5">
         <button
           type="button"
@@ -62,7 +64,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             setInput('Send today\'s market summary to my email.');
             if (textareaRef.current) textareaRef.current.focus();
           }}
-          className="text-[11px] px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 flex items-center gap-1.5 shrink-0 transition-colors"
+          className={chipClass}
         >
           <Mail className="w-3 h-3 text-cyan-400" />
           <span>Email Market Summary</span>
@@ -73,9 +75,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             setInput('What is the current NVIDIA stock price?');
             if (textareaRef.current) textareaRef.current.focus();
           }}
-          className="text-[11px] px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 shrink-0 transition-colors"
+          className={chipClass}
         >
-          NVDA Price & Movements
+          <TrendingUp className="w-3 h-3 text-emerald-400" />
+          <span>NVDA Price & Movements</span>
         </button>
         <button
           type="button"
@@ -83,9 +86,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             setInput('Give me today\'s trading insights');
             if (textareaRef.current) textareaRef.current.focus();
           }}
-          className="text-[11px] px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 shrink-0 transition-colors"
+          className={chipClass}
         >
-          Key Technical Themes
+          <BarChart2 className="w-3 h-3 text-violet-400" />
+          <span>Key Technical Themes</span>
         </button>
       </div>
 
@@ -129,9 +133,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         </div>
 
-        {/* Enter instruction */}
-        <div className="flex items-center justify-between px-2 pt-2 text-[11px] text-slate-500">
-          <span className="truncate max-w-md">
+        {/* Issue #8: remove truncation so disclaimer is never clipped */}
+        <div className="flex items-start justify-between px-2 pt-2 text-[11px] text-slate-500 gap-4">
+          <span className="leading-snug">
             MarketMind AI provides informational insights for educational purposes and does not constitute financial advice.
           </span>
           <span className="hidden sm:flex items-center gap-1 shrink-0 font-mono text-[10px] text-slate-600">

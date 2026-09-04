@@ -74,7 +74,7 @@ export const BackendStatus: React.FC<BackendStatusProps> = ({
     return (
       <div
         id="marketmind-compact-backend-status"
-        className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-800/80 text-xs"
+        className="flex items-center justify-between px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-800/80 text-xs min-h-[40px]"
       >
         <div className="flex items-center gap-2 overflow-hidden">
           {getStatusBadge()}
@@ -82,14 +82,15 @@ export const BackendStatus: React.FC<BackendStatusProps> = ({
             <span className="text-[10px] text-slate-400 font-mono">({latencyMs}ms)</span>
           )}
         </div>
+        {/* Issue #13: increased button size to match standard component height & alignment */}
         <button
           id="test-backend-compact-button"
           onClick={handleTest}
           disabled={isTesting || status === 'testing'}
-          className="text-[11px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-colors flex items-center gap-1 disabled:opacity-50"
+          className="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-colors flex items-center gap-1.5 disabled:opacity-50 shrink-0"
           title="Send test request to n8n webhook"
         >
-          <RefreshCw className={`w-2.5 h-2.5 ${isTesting || status === 'testing' ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3 h-3 ${isTesting || status === 'testing' ? 'animate-spin' : ''}`} />
           <span>Test</span>
         </button>
       </div>
