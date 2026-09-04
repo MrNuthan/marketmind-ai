@@ -1,0 +1,8 @@
+{
+  "name": "MarketMind AI",
+  "description": "Understand the Market. Faster. Premium AI-powered stock market and trading assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
