@@ -3,7 +3,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion } from 'motion/react';
 import {
-  Bot,
   User,
   Copy,
   Check,
@@ -38,12 +37,10 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     try {
       await navigator.clipboard.writeText(message.content);
       setCopied(true);
-      if (onCopySuccess) {
-        onCopySuccess('Response copied to clipboard');
-      }
+      onCopySuccess?.('Response copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback
+      // clipboard access denied — silent fail
     }
   };
 
@@ -52,136 +49,111 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     minute: '2-digit',
   });
 
+  // ── User message ──────────────────────────────────────────────
   if (isUser) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 10, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.25 }}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
         id={`chat-message-${message.id}`}
-        className="flex justify-end gap-3 max-w-2xl ml-auto w-full group"
+        className="flex justify-end max-w-2xl ml-auto w-full"
       >
-        <div className="flex flex-col items-end">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[11px] text-slate-500">{formattedTime}</span>
+        <div className="flex flex-col items-end max-w-[85%]">
+          <div className="flex items-center gap-2 mb-1.5 pr-1">
+            <span className="text-[11px] text-slate-500 font-mono">{formattedTime}</span>
             <span className="text-xs font-medium text-slate-400">You</span>
+            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 border border-blue-400/20 flex items-center justify-center shadow-sm">
+              <User className="w-3.5 h-3.5 text-white" />
+            </div>
           </div>
-
-          <div className="relative px-4 py-3 rounded-2xl rounded-tr-sm bg-gradient-to-br from-cyan-600 via-blue-600 to-indigo-700 text-white shadow-lg shadow-cyan-950/30 text-sm font-normal leading-relaxed border border-cyan-400/20 break-words max-w-xl">
+          <div className="px-4 py-3 rounded-2xl rounded-tr-sm bg-gradient-to-br from-blue-600/90 via-indigo-600/90 to-violet-700/80 text-white text-sm leading-relaxed shadow-lg shadow-blue-950/30 border border-blue-400/15 break-words">
             {message.content}
           </div>
-        </div>
-
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 border border-blue-400/30 flex items-center justify-center shrink-0 shadow-md mt-5">
-          <User className="w-4 h-4 text-white" />
         </div>
       </motion.div>
     );
   }
 
-  // AI Response
+  // ── AI message ────────────────────────────────────────────────
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12, scale: 0.99 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.25 }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
       id={`chat-message-${message.id}`}
-      className="flex justify-start gap-3.5 max-w-4xl mr-auto w-full group"
+      className="flex items-start gap-3 max-w-4xl mr-auto w-full group"
     >
-      {/* AI Avatar */}
+      {/* AI avatar */}
       <div
-        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-lg mt-1 border ${
+        className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-md mt-0.5 border ${
           message.isError
-            ? 'bg-rose-950/60 border-rose-500/40 text-rose-400'
-            : 'bg-gradient-to-br from-emerald-500/20 via-cyan-500/20 to-blue-500/20 border-emerald-500/30 text-emerald-400 shadow-emerald-950/20'
+            ? 'bg-rose-950/60 border-rose-500/30 text-rose-400'
+            : 'bg-gradient-to-br from-emerald-500/20 via-cyan-500/15 to-slate-800 border-emerald-500/25 text-emerald-400'
         }`}
       >
-        {message.isError ? <AlertTriangle className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+        {message.isError ? (
+          <AlertTriangle className="w-3.5 h-3.5" />
+        ) : (
+          <Sparkles className="w-3.5 h-3.5" />
+        )}
       </div>
 
       <div className="flex-1 min-w-0">
-        {/* Header line */}
-        <div className="flex items-center justify-between gap-2 mb-1.5">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              MarketMind AI
-            </span>
-            <span className="text-[10px] text-slate-500 font-mono">Agent Intelligence</span>
-          </div>
-          <span className="text-[11px] text-slate-500">{formattedTime}</span>
+        {/* Name + time */}
+        <div className="flex items-center gap-2.5 mb-2">
+          <span
+            className={`text-xs font-semibold ${
+              message.isError ? 'text-rose-400' : 'text-emerald-400'
+            }`}
+          >
+            MarketMind AI
+          </span>
+          <span className="text-[11px] text-slate-600 font-mono">{formattedTime}</span>
         </div>
 
-        {/* Message Card */}
+        {/* Message card */}
         <div
-          className={`p-5 rounded-2xl rounded-tl-sm border backdrop-blur-md shadow-xl text-sm leading-relaxed transition-all ${
+          className={`rounded-2xl rounded-tl-sm border text-sm leading-relaxed ${
             message.isError
-              ? 'bg-rose-950/30 border-rose-800/50 text-rose-200'
-              : 'bg-[#0D1322]/90 border-slate-800/90 text-slate-200 shadow-black/40'
+              ? 'bg-rose-950/25 border-rose-800/40 text-rose-200 p-4'
+              : 'bg-[#0D1117]/90 border-[#1e293b] text-slate-200 p-5 shadow-lg shadow-black/20'
           }`}
         >
-          <div className="markdown-body space-y-3 prose prose-invert max-w-none prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-slate-800">
+          <div className="mm-prose">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                h1: ({ ...props }) => (
-                  <h1 className="text-lg font-bold text-white border-b border-slate-800 pb-2 mb-3 mt-1 flex items-center gap-2" {...props} />
-                ),
-                h2: ({ ...props }) => (
-                  <h2 className="text-base font-semibold text-slate-100 mt-4 mb-2 flex items-center gap-1.5" {...props} />
-                ),
-                h3: ({ ...props }) => (
-                  <h3 className="text-sm font-semibold text-emerald-300 mt-3 mb-1" {...props} />
-                ),
-                p: ({ ...props }) => <p className="mb-2.5 text-slate-200 leading-relaxed" {...props} />,
-                ul: ({ ...props }) => (
-                  <ul className="list-disc list-outside ml-5 space-y-1.5 text-slate-300 mb-3" {...props} />
-                ),
-                ol: ({ ...props }) => (
-                  <ol className="list-decimal list-outside ml-5 space-y-1.5 text-slate-300 mb-3" {...props} />
-                ),
-                li: ({ ...props }) => <li className="leading-relaxed" {...props} />,
-                blockquote: ({ ...props }) => (
-                  <blockquote
-                    className="border-l-2 border-emerald-500/60 pl-3.5 py-1 text-slate-300/90 bg-emerald-950/20 rounded-r-md italic my-3"
-                    {...props}
-                  />
-                ),
+                h1: ({ ...props }) => <h1 {...props} />,
+                h2: ({ ...props }) => <h2 {...props} />,
+                h3: ({ ...props }) => <h3 {...props} />,
+                p: ({ ...props }) => <p {...props} />,
+                ul: ({ ...props }) => <ul {...props} />,
+                ol: ({ ...props }) => <ol {...props} />,
+                li: ({ ...props }) => <li {...props} />,
+                blockquote: ({ ...props }) => <blockquote {...props} />,
                 table: ({ ...props }) => (
-                  <div className="overflow-x-auto my-3 rounded-lg border border-slate-800">
-                    <table className="w-full text-left border-collapse text-xs" {...props} />
+                  <div className="overflow-x-auto rounded-lg border border-[#1e293b] my-3">
+                    <table {...props} />
                   </div>
                 ),
-                thead: ({ ...props }) => <thead className="bg-slate-900/80 border-b border-slate-800 text-slate-300 font-semibold" {...props} />,
-                tbody: ({ ...props }) => <tbody className="divide-y divide-slate-800/60" {...props} />,
-                tr: ({ ...props }) => <tr className="hover:bg-slate-800/30 transition-colors" {...props} />,
-                th: ({ ...props }) => <th className="p-2.5 font-medium text-slate-200" {...props} />,
-                td: ({ ...props }) => <td className="p-2.5 text-slate-300" {...props} />,
+                thead: ({ ...props }) => <thead {...props} />,
+                tbody: ({ ...props }) => <tbody {...props} />,
+                tr: ({ ...props }) => <tr {...props} />,
+                th: ({ ...props }) => <th {...props} />,
+                td: ({ ...props }) => <td {...props} />,
                 code: ({ className, children, ...props }) => {
                   const isBlock = Boolean(className);
                   return isBlock ? (
-                    <code
-                      className="block p-3 rounded-lg bg-black/60 border border-slate-800 text-xs font-mono text-emerald-300 overflow-x-auto"
-                      {...props}
-                    >
-                      {children}
-                    </code>
+                    <pre>
+                      <code {...props}>{children}</code>
+                    </pre>
                   ) : (
-                    <code
-                      className="px-1.5 py-0.5 rounded bg-black/40 border border-slate-800 text-xs font-mono text-cyan-300"
-                      {...props}
-                    >
-                      {children}
-                    </code>
+                    <code {...props}>{children}</code>
                   );
                 },
                 a: ({ ...props }) => (
-                  <a
-                    className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2 transition-colors font-medium"
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    {...props}
-                  />
+                  <a target="_blank" rel="noreferrer noopener" {...props} />
                 ),
               }}
             >
@@ -189,16 +161,16 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
             </ReactMarkdown>
           </div>
 
-          {/* Action Bar (Copy, Regenerate, Helpful, Unhelpful) */}
+          {/* Action bar — shown on hover for AI messages */}
           {!message.isError && (
-            <div className="flex items-center justify-between pt-3 mt-4 border-t border-slate-800/70 text-xs text-slate-400">
-              <div className="flex items-center gap-1">
+            <div className="flex items-center justify-between pt-3 mt-3 border-t border-[#1e293b]/80 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+              <div className="flex items-center gap-0.5">
                 {/* Copy */}
                 <button
                   id={`copy-button-${message.id}`}
                   onClick={handleCopy}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-slate-800/80 hover:text-slate-200 transition-colors"
-                  title="Copy response to clipboard"
+                  className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 transition-colors"
+                  title="Copy response"
                   aria-label="Copy AI response"
                 >
                   {copied ? (
@@ -220,8 +192,8 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                     id={`regenerate-button-${message.id}`}
                     onClick={() => onRegenerate(message.id)}
                     disabled={isLoading}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-slate-800/80 hover:text-slate-200 transition-colors disabled:opacity-40"
-                    title="Resend previous query"
+                    className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-slate-500 hover:text-slate-200 hover:bg-slate-800/60 transition-colors disabled:opacity-40"
+                    title="Regenerate response"
                     aria-label="Regenerate response"
                   >
                     <RotateCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -232,14 +204,14 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 
               {/* Feedback */}
               {onFeedback && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
                   <button
                     id={`feedback-helpful-${message.id}`}
                     onClick={() => onFeedback(message.id, 'helpful')}
-                    className={`p-1.5 rounded-md transition-colors ${
+                    className={`p-1.5 rounded-lg transition-colors ${
                       message.feedback === 'helpful'
-                        ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/50'
-                        : 'hover:bg-slate-800/80 text-slate-500 hover:text-slate-300'
+                        ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/40'
+                        : 'text-slate-600 hover:text-slate-300 hover:bg-slate-800/60'
                     }`}
                     title="Helpful"
                     aria-label="Mark helpful"
@@ -249,12 +221,12 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                   <button
                     id={`feedback-unhelpful-${message.id}`}
                     onClick={() => onFeedback(message.id, 'unhelpful')}
-                    className={`p-1.5 rounded-md transition-colors ${
+                    className={`p-1.5 rounded-lg transition-colors ${
                       message.feedback === 'unhelpful'
-                        ? 'bg-rose-950/60 text-rose-400 border border-rose-800/50'
-                        : 'hover:bg-slate-800/80 text-slate-500 hover:text-slate-300'
+                        ? 'bg-rose-950/60 text-rose-400 border border-rose-800/40'
+                        : 'text-slate-600 hover:text-slate-300 hover:bg-slate-800/60'
                     }`}
-                    title="Not Helpful"
+                    title="Not helpful"
                     aria-label="Mark unhelpful"
                   >
                     <ThumbsDown className="w-3.5 h-3.5" />

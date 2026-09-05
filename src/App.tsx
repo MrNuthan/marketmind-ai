@@ -5,19 +5,41 @@ import { Modal } from './components/UI/Modal';
 import { Toast, ToastMessage } from './components/UI/Toast';
 import { useSession } from './hooks/useSession';
 import { useChat } from './hooks/useChat';
-import { testConnection, getN8nWebhookUrl, DEFAULT_N8N_WEBHOOK_URL } from './services/n8n';
+import { testConnection } from './services/n8n';
 import { ConnectionStatusType } from './types/n8n';
 import {
   Menu,
-  LineChart,
-  RefreshCw,
+  Sparkles,
   Trash2,
-  Cpu,
-  Layers,
-  CheckCircle2,
-  XCircle,
-  ExternalLink,
+  TrendingUp,
+  Newspaper,
+  Mail,
+  BarChart2,
+  ArrowDown,
 } from 'lucide-react';
+
+// ── Subtle financial background — static SVG grid, zero animation cost ──────
+const FinancialBackground: React.FC = () => (
+  <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10" aria-hidden="true">
+    {/* Very faint dot grid */}
+    <svg
+      width="100%"
+      height="100%"
+      xmlns="http://www.w3.org/2000/svg"
+      className="absolute inset-0 opacity-[0.018]"
+    >
+      <defs>
+        <pattern id="dot-grid" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
+          <circle cx="1" cy="1" r="1" fill="#10b981" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#dot-grid)" />
+    </svg>
+    {/* Subtle ambient glows */}
+    <div className="absolute top-0 right-1/4 w-[600px] h-[400px] bg-emerald-900/8 rounded-full blur-[140px]" />
+    <div className="absolute bottom-1/4 left-1/3 w-[400px] h-[300px] bg-cyan-900/6 rounded-full blur-[120px]" />
+  </div>
+);
 
 export default function App() {
   const { sessionId, renewSession } = useSession();
@@ -40,54 +62,45 @@ export default function App() {
     retryLast,
   } = useChat(sessionId);
 
-  // Mobile sidebar state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-
-  // Modals state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
 
-  // Backend connection state (starts as 'idle' - prompt mandates NOT always displaying "Connected"!)
+  // Backend connection — starts 'idle'; only updated by real requests
   const [backendStatus, setBackendStatus] = useState<ConnectionStatusType>('idle');
   const [backendLatency, setBackendLatency] = useState<number | undefined>(undefined);
   const [backendLastChecked, setBackendLastChecked] = useState<string | undefined>(undefined);
   const [backendErrorMessage, setBackendErrorMessage] = useState<string | undefined>(undefined);
 
-  // Toasts
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const addToast = useCallback((type: 'success' | 'error' | 'info', message: string) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`;
     setToasts((prev) => [...prev, { id, type, message }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4000);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
   }, []);
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  // Backend verification handler
   const handleTestBackend = useCallback(async () => {
     setBackendStatus('testing');
     setBackendErrorMessage(undefined);
-
     const result = await testConnection(sessionId);
     setBackendLatency(result.latencyMs);
     setBackendLastChecked(new Date().toISOString());
-
     if (result.success) {
       setBackendStatus('connected');
-      addToast('success', `✓ n8n Backend Connected (${result.latencyMs}ms)`);
+      addToast('success', `✓ Backend Connected (${result.latencyMs}ms)`);
     } else {
       setBackendStatus('offline');
       setBackendErrorMessage(result.error);
-      addToast('error', `✕ n8n Backend Offline: ${result.error || 'Connection failed'}`);
+      addToast('error', `Backend offline — please try again`);
     }
   }, [sessionId, addToast]);
 
-  // If a chat query finishes successfully or fails, update connection state organically
+  // Organically update connection status from chat outcomes
   useEffect(() => {
     if (errorMessage) {
       setBackendStatus('offline');
@@ -95,28 +108,27 @@ export default function App() {
     }
   }, [errorMessage]);
 
-  const handleResetSession = () => {
-    const newId = renewSession();
-    createNewChat();
-    addToast('info', `New session generated: ${newId}`);
-  };
+  useEffect(() => {
+    if (!isLoading && !errorMessage && messages.length > 0) {
+      const last = messages[messages.length - 1];
+      if (last.role === 'assistant' && !last.isError) setBackendStatus('connected');
+    }
+  }, [isLoading, errorMessage, messages]);
 
-  const handleClearAllHistory = () => {
-    if (window.confirm('Are you sure you want to clear all chat history? This cannot be undone.')) {
+  const handleClearHistory = () => {
+    if (window.confirm('Clear all conversation history? This cannot be undone.')) {
       conversations.forEach((c) => deleteConversation(c.id));
       createNewChat();
-      addToast('info', 'Chat history cleared.');
+      addToast('info', 'Conversation history cleared.');
     }
   };
 
-  const webhookUrl = getN8nWebhookUrl();
-
   return (
-    <div className="flex h-screen w-screen bg-[#080B11] text-slate-100 overflow-hidden select-none font-sans">
-      {/* Toast Notifications */}
+    <div className="flex h-screen w-screen bg-[#08090E] text-slate-100 overflow-hidden select-none font-sans relative">
+      <FinancialBackground />
       <Toast toasts={toasts} onDismiss={dismissToast} />
 
-      {/* Glassmorphism Sidebar */}
+      {/* Desktop sidebar */}
       <Sidebar
         conversations={conversations}
         activeConversationId={activeConversationId}
@@ -131,48 +143,42 @@ export default function App() {
         onTestBackend={handleTestBackend}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenAbout={() => setIsAboutOpen(true)}
-        onQuickQuery={sendQuery}
         isOpenMobile={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
       />
 
-      {/* Main Container */}
+      {/* Main content column */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
-        {/* Mobile Header Bar */}
-        <div className="lg:hidden h-14 border-b border-slate-800/80 bg-[#090D18]/90 backdrop-blur-xl px-4 flex items-center justify-between z-20 shrink-0">
+        {/* Mobile top bar */}
+        <div className="lg:hidden h-12 border-b border-[#1e293b]/80 bg-[#08090E]/95 backdrop-blur-xl px-4 flex items-center justify-between z-20 shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800/60 transition-colors"
               aria-label="Open navigation menu"
             >
               <Menu className="w-5 h-5" />
             </button>
-
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 flex items-center justify-center">
-                <LineChart className="w-4 h-4 text-emerald-400" />
+              <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-emerald-500/20 to-cyan-500/15 border border-emerald-500/25 flex items-center justify-center">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
               </div>
               <span className="font-bold text-sm tracking-tight text-white">MarketMind AI</span>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            {/* Connection status indicator on mobile */}
-            <span
-              className={`w-2.5 h-2.5 rounded-full ${
-                backendStatus === 'connected'
-                  ? 'bg-emerald-400'
-                  : backendStatus === 'offline'
-                  ? 'bg-rose-500'
-                  : 'bg-slate-500'
-              }`}
-              title={`Status: ${backendStatus}`}
-            />
-          </div>
+          <span
+            className={`w-2 h-2 rounded-full ${
+              backendStatus === 'connected'
+                ? 'bg-emerald-400'
+                : backendStatus === 'offline'
+                ? 'bg-rose-500'
+                : 'bg-slate-600'
+            }`}
+            title={`Backend: ${backendStatus}`}
+          />
         </div>
 
-        {/* Chat Window */}
+        {/* Chat window */}
         <ChatWindow
           messages={messages}
           isLoading={isLoading}
@@ -190,147 +196,184 @@ export default function App() {
         />
       </div>
 
-      {/* Settings Modal */}
+      {/* ── Settings Modal ─────────────────────────── */}
       <Modal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        title="MarketMind AI Configuration"
+        title="Settings"
         id="settings-modal"
       >
-        <div className="space-y-4">
+        <div className="space-y-5">
+          {/* Conversation */}
           <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-              Production n8n Webhook Endpoint
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              Conversation
             </label>
-            <div className="p-2.5 rounded-lg bg-black/40 border border-slate-800 text-xs font-mono text-emerald-400 break-all select-text">
-              {webhookUrl}
-            </div>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Configured via <code className="text-slate-400">VITE_N8N_WEBHOOK_URL</code>. Fallback defaults to the production endpoint.
-            </p>
+            <button
+              onClick={() => {
+                handleClearHistory();
+                setIsSettingsOpen(false);
+              }}
+              className="w-full py-2.5 px-3 rounded-xl bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 border border-rose-900/40 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Clear Chat History</span>
+            </button>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-              Active Browser Session ID
+          {/* Backend */}
+          <div className="pt-2 border-t border-[#1e293b]/80">
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              Backend
             </label>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 p-2 rounded-lg bg-black/40 border border-slate-800 text-xs font-mono text-cyan-300 truncate select-text">
-                {sessionId}
-              </div>
-              <button
-                onClick={handleResetSession}
-                className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition-colors shrink-0"
-              >
-                Reset
-              </button>
-            </div>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Used by n8n Generative AI memory nodes to maintain multi-turn context.
-            </p>
-          </div>
-
-          <div className="pt-2 border-t border-slate-800/80">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Connection Diagnostics
-            </label>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-800 mb-2">
-              <div className="flex items-center gap-2">
-                {backendStatus === 'connected' ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                ) : backendStatus === 'offline' ? (
-                  <XCircle className="w-4 h-4 text-rose-400" />
-                ) : (
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-500" />
-                )}
-                <span className="text-xs font-medium text-slate-200">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-[#0D1117] border border-[#1e293b]">
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    backendStatus === 'connected'
+                      ? 'bg-emerald-500'
+                      : backendStatus === 'offline'
+                      ? 'bg-rose-500'
+                      : 'bg-slate-600'
+                  }`}
+                />
+                <span className="text-sm text-slate-200">
                   {backendStatus === 'connected'
-                    ? `Connected (${backendLatency}ms)`
+                    ? `Connected${backendLatency ? ` · ${backendLatency}ms` : ''}`
                     : backendStatus === 'offline'
                     ? 'Offline'
-                    : 'Not Verified'}
+                    : backendStatus === 'testing'
+                    ? 'Testing…'
+                    : 'Not verified'}
                 </span>
               </div>
               <button
                 onClick={handleTestBackend}
                 disabled={backendStatus === 'testing'}
-                className="px-3 py-1.5 rounded-lg bg-cyan-950/40 hover:bg-cyan-900/60 text-cyan-300 text-xs font-medium border border-cyan-700/50 flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                className="text-xs px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/60 transition-colors disabled:opacity-50"
               >
-                <RefreshCw className={`w-3 h-3 ${backendStatus === 'testing' ? 'animate-spin' : ''}`} />
-                <span>{backendStatus === 'testing' ? 'Testing...' : 'Test Backend'}</span>
+                {backendStatus === 'testing' ? 'Testing…' : 'Test'}
               </button>
             </div>
             {backendLastChecked && (
-              <p className="text-[10px] text-slate-500 font-mono">
-                Last checked: {new Date(backendLastChecked).toLocaleTimeString()}
+              <p className="text-[11px] text-slate-600 mt-1.5 px-1">
+                Last checked {new Date(backendLastChecked).toLocaleTimeString()}
               </p>
             )}
-          </div>
-
-          <div className="pt-2 border-t border-slate-800/80">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-              Storage Management
-            </label>
-            <button
-              onClick={handleClearAllHistory}
-              className="w-full py-2 px-3 rounded-lg bg-rose-950/20 hover:bg-rose-950/40 text-rose-300 border border-rose-900/40 text-xs font-medium flex items-center justify-center gap-2 transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Clear Local Conversation History</span>
-            </button>
           </div>
         </div>
       </Modal>
 
-      {/* About Modal */}
+      {/* ── About Modal ────────────────────────────── */}
       <Modal
         isOpen={isAboutOpen}
         onClose={() => setIsAboutOpen(false)}
         title="About MarketMind AI"
         id="about-modal"
       >
-        <div className="space-y-4 text-xs text-slate-300 leading-relaxed">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-emerald-950/30 via-cyan-950/20 to-slate-900 border border-slate-800">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500/20 to-cyan-500/20 border border-emerald-400/30 flex items-center justify-center shrink-0">
-              <LineChart className="w-5 h-5 text-emerald-400" />
+        <div className="space-y-5">
+          {/* Hero */}
+          <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-cyan-950/20 to-[#0D1117] border border-[#1e293b]">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500/25 to-cyan-500/15 border border-emerald-500/25 flex items-center justify-center shrink-0">
+              <Sparkles className="w-6 h-6 text-emerald-400" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-white">MarketMind AI</h4>
-              <p className="text-emerald-400 text-[11px] font-medium">"Understand the Market. Faster."</p>
+              <h3 className="text-base font-bold text-white">MarketMind AI</h3>
+              <p className="text-emerald-400 text-sm font-medium mt-0.5">
+                "Understand the Market. Faster."
+              </p>
             </div>
           </div>
 
-          <p>
-            MarketMind AI is a presentation-grade AI stock market and trading assistant frontend designed for a
-            Generative AI capstone showcase.
+          {/* Description */}
+          <p className="text-sm text-slate-300 leading-relaxed">
+            MarketMind AI is a Generative AI-powered stock market assistant that helps you quickly
+            understand stock prices, market movements, and the latest financial news through
+            natural-language conversations.
           </p>
 
-          <div className="space-y-2 p-3 rounded-lg bg-black/40 border border-slate-800">
-            <div className="flex items-center gap-2 text-cyan-400 font-semibold">
-              <Layers className="w-3.5 h-3.5" />
-              <span>System Architecture</span>
-            </div>
-            <p className="text-[11px] text-slate-400">
-              User Prompt → Frontend POST <code className="text-slate-300">/webhook/ai-market-agent</code> →
-              n8n Orchestrator → Generative AI Agent with Stock Market News Tool, Stock Market Data Tool & Gmail Tool
-              → Structured Response → Client Render.
+          {/* What it can do */}
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              What it can do
             </p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                {
+                  icon: TrendingUp,
+                  color: 'text-emerald-400',
+                  bg: 'bg-emerald-500/10',
+                  title: 'Stock Information',
+                  desc: 'Prices and recent movements',
+                },
+                {
+                  icon: Newspaper,
+                  color: 'text-cyan-400',
+                  bg: 'bg-cyan-500/10',
+                  title: 'Market News',
+                  desc: 'Latest financial headlines',
+                },
+                {
+                  icon: BarChart2,
+                  color: 'text-violet-400',
+                  bg: 'bg-violet-500/10',
+                  title: 'AI Analysis',
+                  desc: 'Complex trends simplified',
+                },
+                {
+                  icon: Mail,
+                  color: 'text-amber-400',
+                  bg: 'bg-amber-500/10',
+                  title: 'Email Reports',
+                  desc: 'Send summaries via email',
+                },
+              ].map(({ icon: Icon, color, bg, title, desc }) => (
+                <div
+                  key={title}
+                  className="p-3 rounded-xl bg-[#0D1117] border border-[#1e293b] flex flex-col gap-2"
+                >
+                  <div className={`w-7 h-7 rounded-lg ${bg} flex items-center justify-center`}>
+                    <Icon className={`w-3.5 h-3.5 ${color}`} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-200">{title}</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-2 p-3 rounded-lg bg-black/40 border border-slate-800">
-            <div className="flex items-center gap-2 text-emerald-400 font-semibold">
-              <Cpu className="w-3.5 h-3.5" />
-              <span>Zero-Fabrication Guarantee</span>
-            </div>
-            <p className="text-[11px] text-slate-400">
-              The frontend never simulates mock financial indicators, prices, or market news. Every data point
-              originates directly from the live n8n AI agent.
+          {/* How it works */}
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+              How it works
             </p>
+            <div className="flex flex-col items-center gap-1 text-sm">
+              {['Your question', 'AI Agent', 'Market data & news', 'AI analysis', 'Clear response'].map(
+                (step, i, arr) => (
+                  <React.Fragment key={step}>
+                    <div className="px-4 py-2 rounded-xl bg-[#0D1117] border border-[#1e293b] text-slate-300 font-medium text-center w-full">
+                      {step}
+                    </div>
+                    {i < arr.length - 1 && (
+                      <ArrowDown className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                    )}
+                  </React.Fragment>
+                )
+              )}
+            </div>
           </div>
 
-          <div className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800/80 text-[11px] text-slate-500">
-            <p className="font-semibold text-slate-400 mb-0.5">Disclaimer</p>
-            MarketMind AI provides informational insights for educational purposes and does not constitute financial advice.
+          {/* Footer */}
+          <div className="pt-2 border-t border-[#1e293b]/80 space-y-2">
+            <p className="text-[11px] text-slate-500 text-center">
+              Built with React, n8n, Google Gemini, and Generative AI.
+            </p>
+            <p className="text-[11px] text-slate-600 text-center leading-relaxed">
+              MarketMind AI provides informational insights for educational purposes and does not
+              constitute financial advice.
+            </p>
           </div>
         </div>
       </Modal>

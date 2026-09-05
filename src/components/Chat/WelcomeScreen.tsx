@@ -1,109 +1,149 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { QuickActions } from './QuickActions';
-import { Sparkles, LineChart } from 'lucide-react';
+import {
+  TrendingUp,
+  Newspaper,
+  Mail,
+  BarChart2,
+  Sparkles,
+} from 'lucide-react';
 
 interface WelcomeScreenProps {
   onSelectAction: (query: string) => void;
   disabled?: boolean;
 }
 
-export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onSelectAction, disabled = false }) => {
+const suggestions = [
+  {
+    id: 'suggestion-market-today',
+    icon: TrendingUp,
+    iconColor: 'text-emerald-400',
+    iconBg: 'bg-emerald-500/10 border-emerald-500/20',
+    label: 'What is happening in the market today?',
+    query: 'What is happening in the market today?',
+  },
+  {
+    id: 'suggestion-nvidia',
+    icon: BarChart2,
+    iconColor: 'text-cyan-400',
+    iconBg: 'bg-cyan-500/10 border-cyan-500/20',
+    label: 'Analyze NVIDIA stock',
+    query: 'Analyze NVIDIA stock in detail today',
+  },
+  {
+    id: 'suggestion-news',
+    icon: Newspaper,
+    iconColor: 'text-violet-400',
+    iconBg: 'bg-violet-500/10 border-violet-500/20',
+    label: 'What is the latest market news?',
+    query: 'What is the latest stock market news?',
+  },
+  {
+    id: 'suggestion-email',
+    icon: Mail,
+    iconColor: 'text-amber-400',
+    iconBg: 'bg-amber-500/10 border-amber-500/20',
+    label: 'Send me a market summary by email',
+    query: "Send today's market summary to my email.",
+  },
+] as const;
+
+export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
+  onSelectAction,
+  disabled = false,
+}) => {
   return (
     <div
       id="marketmind-welcome-screen"
-      className="relative flex-1 flex flex-col items-center justify-center px-4 py-8 overflow-y-auto w-full max-w-5xl mx-auto"
+      className="relative flex-1 flex flex-col items-center justify-center px-6 py-12 w-full max-w-3xl mx-auto overflow-hidden"
     >
-      {/* Subtle Financial Background Elements */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10 flex items-center justify-center">
-        {/* Subtle radial glow */}
-        <div className="absolute w-[500px] h-[300px] bg-cyan-600/10 rounded-full blur-[100px] -top-10 left-1/2 -translate-x-1/2" />
-        <div className="absolute w-[400px] h-[250px] bg-emerald-600/10 rounded-full blur-[90px] bottom-10 left-1/3 -translate-x-1/2" />
-
-        {/* Faint financial grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.7) 1px, transparent 0)`,
-            backgroundSize: '32px 32px',
-          }}
-        />
-
-        {/* Faint animated market chart line SVG */}
-        <svg
-          className="absolute w-full max-w-4xl h-48 opacity-[0.07] text-emerald-400 stroke-current"
-          viewBox="0 0 800 200"
-          fill="none"
-          preserveAspectRatio="none"
-        >
-          <motion.path
-            d="M 0 150 Q 150 160 250 110 T 450 90 T 650 40 T 800 30"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 2.5, ease: 'easeInOut' }}
-          />
-          <motion.path
-            d="M 0 180 Q 200 120 350 140 T 550 80 T 750 60 T 800 50"
-            strokeWidth="1.5"
-            strokeDasharray="4 4"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 3, delay: 0.5, ease: 'easeInOut' }}
-          />
-        </svg>
+      {/* Ambient background glows — static, no animation */}
+      <div className="absolute inset-0 pointer-events-none -z-10">
+        <div className="absolute w-[480px] h-[280px] rounded-full bg-emerald-600/6 blur-[120px] top-1/4 left-1/2 -translate-x-1/2" />
+        <div className="absolute w-[320px] h-[200px] rounded-full bg-cyan-600/5 blur-[100px] bottom-1/3 left-1/4" />
       </div>
 
-      {/* Hero Badge */}
+      {/* Hero */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-medium mb-6 backdrop-blur-md shadow-sm"
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="text-center mb-10"
       >
-        <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-        <span className="tracking-wide">AI-Powered Financial Intelligence</span>
-        <Sparkles className="w-3.5 h-3.5 text-emerald-400 ml-0.5" />
-      </motion.div>
-
-      {/* Main Logo & Title */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="text-center mb-8 max-w-2xl"
-      >
-        <div className="flex items-center justify-center gap-3 mb-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500/20 via-cyan-500/20 to-blue-500/20 border border-emerald-400/30 flex items-center justify-center shadow-xl shadow-emerald-950/30">
-            <LineChart className="w-6 h-6 text-emerald-400" />
+        {/* Logo mark */}
+        <div className="flex items-center justify-center mb-5">
+          <div className="relative">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500/20 via-cyan-500/15 to-slate-800 border border-emerald-500/25 flex items-center justify-center shadow-2xl shadow-emerald-950/30">
+              <Sparkles className="w-6 h-6 text-emerald-400" />
+            </div>
+            {/* Subtle glow ring */}
+            <div className="absolute inset-0 rounded-2xl ring-1 ring-emerald-400/10 scale-110" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-            MARKETMIND <span className="text-emerald-400">AI</span>
-          </h1>
         </div>
 
-        <h2 className="text-xl sm:text-2xl font-semibold text-slate-200 mb-3 tracking-tight">
-          "Understand the Market. Faster."
-        </h2>
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-white mb-3 leading-none">
+          MARKET
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+            MIND
+          </span>{' '}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400">
+            AI
+          </span>
+        </h1>
 
-        <p className="text-sm sm:text-base text-slate-400 leading-relaxed max-w-xl mx-auto">
-          MarketMind AI brings stock data, market news, and intelligent insights together through natural
-          conversation. Ask anything about stocks, trading, market movements, and the latest financial developments.
+        <p className="text-base sm:text-lg font-medium text-slate-300 mb-3 tracking-tight">
+          Understand the Market. Faster.
+        </p>
+
+        <p className="text-sm text-slate-500 leading-relaxed max-w-xs sm:max-w-sm mx-auto">
+          Ask anything about stocks, market movements, or financial news.
         </p>
       </motion.div>
 
-      {/* Quick Action Prompt Cards */}
-      <div className="w-full mb-8">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <span className="h-px w-10 bg-slate-800" />
-          <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
-            Popular Market Inquiries
-          </span>
-          <span className="h-px w-10 bg-slate-800" />
-        </div>
-        <QuickActions onSelectAction={onSelectAction} disabled={disabled} />
-      </div>
+      {/* Suggestion cards — 2×2 grid */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.12, ease: 'easeOut' }}
+        className="w-full grid grid-cols-1 sm:grid-cols-2 gap-3"
+      >
+        {suggestions.map((s, i) => {
+          const Icon = s.icon;
+          return (
+            <motion.button
+              key={s.id}
+              id={s.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.15 + i * 0.07, ease: 'easeOut' }}
+              whileHover={{ scale: 1.02, transition: { duration: 0.15 } }}
+              whileTap={{ scale: 0.98 }}
+              disabled={disabled}
+              onClick={() => onSelectAction(s.query)}
+              className="group flex items-start gap-3.5 p-4 rounded-xl bg-[#0D1117]/80 hover:bg-[#111827]/90 border border-[#1e293b] hover:border-slate-700/80 text-left transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md hover:shadow-black/20 backdrop-blur-sm"
+            >
+              <div
+                className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${s.iconBg}`}
+              >
+                <Icon className={`w-4 h-4 ${s.iconColor}`} />
+              </div>
+              <span className="text-sm text-slate-300 group-hover:text-slate-100 font-medium leading-snug transition-colors">
+                {s.label}
+              </span>
+            </motion.button>
+          );
+        })}
+      </motion.div>
+
+      {/* Subtle bottom hint */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+        className="mt-8 text-xs text-slate-600 text-center"
+      >
+        Powered by n8n · Real market intelligence · No fabricated data
+      </motion.p>
     </div>
   );
 };

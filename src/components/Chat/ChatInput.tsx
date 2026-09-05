@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { Send, Sparkles, Mail, CornerDownLeft, TrendingUp, BarChart2 } from 'lucide-react';
+import { Send, Sparkles, CornerDownLeft } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -10,19 +11,19 @@ interface ChatInputProps {
 export const ChatInput: React.FC<ChatInputProps> = ({
   onSend,
   isLoading,
-  placeholder = "Ask about stocks, markets, trading, or today's news...",
+  placeholder = 'Ask about stocks, markets, or financial news...',
 }) => {
   const [input, setInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-focus on mount & after load
+  // Auto-focus on mount & after loading completes
   useEffect(() => {
     if (!isLoading && textareaRef.current) {
       textareaRef.current.focus();
     }
   }, [isLoading]);
 
-  // Dynamic textarea height
+  // Dynamic textarea height — up to 180px
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
@@ -52,53 +53,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const chipClass = "text-[11px] px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 flex items-center gap-1.5 shrink-0 transition-colors";
+  const canSubmit = Boolean(input.trim()) && !isLoading;
 
   return (
-    <div id="marketmind-chat-input-container" className="w-full max-w-4xl mx-auto px-4 pb-4 pt-2">
-      {/* Issue #1 & #12: unified chip class; every chip now has an icon for consistency */}
-      <div className="flex items-center gap-2 mb-2 overflow-x-auto no-scrollbar py-0.5">
-        <button
-          type="button"
-          onClick={() => {
-            setInput('Send today\'s market summary to my email.');
-            if (textareaRef.current) textareaRef.current.focus();
-          }}
-          className={chipClass}
-        >
-          <Mail className="w-3 h-3 text-cyan-400" />
-          <span>Email Market Summary</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setInput('What is the current NVIDIA stock price?');
-            if (textareaRef.current) textareaRef.current.focus();
-          }}
-          className={chipClass}
-        >
-          <TrendingUp className="w-3 h-3 text-emerald-400" />
-          <span>NVDA Price & Movements</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setInput('Give me today\'s trading insights');
-            if (textareaRef.current) textareaRef.current.focus();
-          }}
-          className={chipClass}
-        >
-          <BarChart2 className="w-3 h-3 text-violet-400" />
-          <span>Key Technical Themes</span>
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="relative group">
-        <div className="relative flex items-end rounded-2xl bg-[#0C111E]/95 border border-slate-800 focus-within:border-emerald-500/50 shadow-2xl focus-within:shadow-emerald-950/20 focus-within:ring-1 focus-within:ring-emerald-500/40 transition-all">
-          <div className="pl-4 pb-3.5 text-slate-500">
-            <Sparkles className="w-5 h-5 text-emerald-400/70 group-focus-within:text-emerald-400 transition-colors" />
+    <div id="marketmind-chat-input-container" className="w-full max-w-3xl mx-auto px-4 pb-5 pt-2">
+      <form onSubmit={handleSubmit} className="relative">
+        {/* Input card */}
+        <div className="relative flex items-end rounded-2xl bg-[#0D1117] border border-[#1e293b] focus-within:border-emerald-500/40 focus-within:ring-1 focus-within:ring-emerald-500/20 shadow-2xl shadow-black/40 transition-all duration-200">
+          {/* Leading icon */}
+          <div className="pl-4 pb-[14px] shrink-0">
+            <Sparkles className="w-5 h-5 text-slate-600 group-focus-within:text-emerald-400 transition-colors" />
           </div>
 
+          {/* Textarea */}
           <textarea
             ref={textareaRef}
             id="chat-input-textarea"
@@ -108,39 +75,40 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             disabled={isLoading}
             placeholder={placeholder}
             rows={1}
-            className="w-full py-3.5 px-3 bg-transparent text-slate-100 placeholder-slate-500 text-sm md:text-base resize-none focus:outline-none max-h-[180px] leading-relaxed"
+            aria-label="Type your market question"
+            className="flex-1 py-[14px] px-3 bg-transparent text-slate-100 placeholder-slate-600 text-sm leading-relaxed resize-none focus:outline-none max-h-[180px] disabled:opacity-60"
           />
 
-          <div className="p-2 flex items-center gap-1.5 shrink-0">
-            <button
+          {/* Send button */}
+          <div className="p-2 shrink-0">
+            <motion.button
               type="submit"
               id="chat-submit-button"
-              disabled={!input.trim() || isLoading}
-              className={`p-2.5 rounded-xl transition-all flex items-center justify-center ${
-                input.trim() && !isLoading
-                  ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-slate-950 hover:brightness-110 shadow-lg shadow-emerald-500/25 active:scale-95 cursor-pointer'
-                  : 'bg-slate-800/80 text-slate-600 cursor-not-allowed'
+              disabled={!canSubmit}
+              whileTap={canSubmit ? { scale: 0.92 } : {}}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                canSubmit
+                  ? 'bg-gradient-to-br from-emerald-500 to-cyan-500 text-slate-950 shadow-lg shadow-emerald-500/25 hover:brightness-110 cursor-pointer'
+                  : 'bg-slate-800/60 text-slate-600 cursor-not-allowed'
               }`}
-              title="Send query (Enter)"
+              title="Send (Enter)"
               aria-label="Send message to MarketMind AI"
             >
               {isLoading ? (
-                <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
               ) : (
                 <Send className="w-4 h-4" />
               )}
-            </button>
+            </motion.button>
           </div>
         </div>
 
-        {/* Issue #8: remove truncation so disclaimer is never clipped */}
-        <div className="flex items-start justify-between px-2 pt-2 text-[11px] text-slate-500 gap-4">
-          <span className="leading-snug">
-            MarketMind AI provides informational insights for educational purposes and does not constitute financial advice.
-          </span>
-          <span className="hidden sm:flex items-center gap-1 shrink-0 font-mono text-[10px] text-slate-600">
-            <span>Shift + Enter for new line</span>
+        {/* Footer row */}
+        <div className="flex items-center justify-between px-1 pt-2 text-[11px] text-slate-600">
+          <span>MarketMind AI · For informational purposes only · Not financial advice</span>
+          <span className="hidden sm:flex items-center gap-1 font-mono shrink-0">
             <CornerDownLeft className="w-2.5 h-2.5" />
+            <span>Shift+Enter for new line</span>
           </span>
         </div>
       </form>
